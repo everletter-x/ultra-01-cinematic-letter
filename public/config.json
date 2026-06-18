@@ -1,38 +1,37 @@
 {
-  "recipient": "",
-  "sender": "",
-  "title": "",
-  "message": "",
-  "photos": [],
+  "recipient": "Sena",
+  "sender": "Aku",
+  "title": "Cinematic: Cerita Cinta Sena",
+  "message": "Dalam sinema kehidupan kita, kamu adalah bintang utama yang tak pernah padam.",
+  "photos": [
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800",
+    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800",
+    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800",
+    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800"
+  ],
   "theme": "dark-luxury",
   "music": "",
   "musicTitle": "",
   "template": "ultra-01",
   "chapters": [
-    {"title": "", "text": ""},
-    {"title": "", "text": ""}
+    {
+      "title": "Bab 1: Pertemuan",
+      "text": "Di antara jutaan manusia, takdir memilih kita untuk bersama. Seperti dua bintang yang jatuh dari langit yang sama, kita bertemu di bumi yang penuh dengan keajaiban."
+    },
+    {
+      "title": "Bab 2: Cinta",
+      "text": "Cinta kita bukan sekadar perasaan, tapi sebuah perjalanan spiritual yang mengajarkan kita tentang kesabaran, pengorbanan, dan kebahagiaan sejati."
+    },
+    {
+      "title": "Bab 3: Janji",
+      "text": "Di hadapan langit dan bumi, aku berjanji akan selalu ada untukmu, dalam suka maupun duka, sampai waktu yang tak berujung."
+    }
   ],
-  "captions": [],
-  "closing": "",
-  "_example": {
-    "recipient": "Kamu",
-    "sender": "Aku",
-    "title": "Cinematic: Cerita Cinta Kita",
-    "message": "Dalam sinema kehidupan kita, kamu adalah bintang utama yang tak pernah padam.",
-    "chapters": [
-      {
-        "title": "Bab 1: Pertemuan",
-        "text": "Di antara jutaan manusia, takdir memilih kita untuk bersama. Seperti dua bintang yang jatuh dari langit yang sama, kita bertemu di bumi yang penuh dengan keajaiban."
-      },
-      {
-        "title": "Bab 2: Cinta",
-        "text": "Cinta kita bukan sekadar perasaan, tapi sebuah perjalanan spiritual yang mengajarkan kita tentang kesabaran, pengorbanan, dan kebahagiaan sejati."
-      },
-      {
-        "title": "Bab 3: Janji",
-        "text": "Di hadapan langit dan bumi, aku berjanji akan selalu ada untukmu, dalam suka maupun duka, sampai waktu yang tak berujung."
-      }
-    ],
-    "closing": "Untukmu, cinta sejatiku, selamanya."
-  }
+  "captions": [
+    "Momen pertama kita bertemu",
+    "Senyummu yang selalu kurindukan",
+    "Saat kita tertawa bersama",
+    "Cinta kita, abadi selamanya"
+  ],
+  "closing": "Untukmu, Sena, cinta sejatiku, selamanya."
 }
