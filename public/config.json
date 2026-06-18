@@ -10,8 +10,8 @@
     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80"
   ],
   "theme": "dark-luxury",
-  "music": "",
-  "musicTitle": "",
+  "music": "music/cinematic-strings.mp3",
+  "musicTitle": "Cinematic Strings",
   "template": "ultra-01",
   "chapters": [
     {
