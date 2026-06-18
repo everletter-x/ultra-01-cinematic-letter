@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 
 interface Chapter {
@@ -122,7 +122,7 @@ function ChapterSection({
         transition={{ duration: 0.8, delay: 0.2 }}
       >
         <span className="text-gold-accent/40 font-serif text-sm tracking-[0.3em] uppercase">
-          Chapter {String(index + 1).padStart(2, '0')}
+          Bab {String(index + 1).padStart(2, '0')}
         </span>
       </motion.div>
 
@@ -171,7 +171,7 @@ function ChapterSection({
                 >
                   <motion.img
                     src={photo}
-                    alt={caption || 'Photo'}
+                    alt={caption || 'Foto'}
                     className="w-full max-w-md h-auto object-cover"
                     animate={{
                       scale: [1, 1.05, 1],
@@ -205,6 +205,14 @@ function PhotoSection({
 }) {
   const { ref, isVisible } = useIntersectionObserver(0.2);
 
+  const particles = useMemo(() => 
+    [...Array(15)].map((_, i) => ({
+      left: `${(i * 7 + 3) % 100}%`,
+      top: `${(i * 11 + 5) % 100}%`,
+      duration: 3 + (i % 4),
+      delay: (i % 5) * 0.6,
+    })), []);
+
   return (
     <section
       ref={ref}
@@ -212,22 +220,22 @@ function PhotoSection({
     >
       {/* Background particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
+        {particles.map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 bg-gold-accent/30 rounded-full"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: p.left,
+              top: p.top,
             }}
             animate={{
               y: [0, -30, 0],
               opacity: [0.3, 0.8, 0.3],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
+              duration: p.duration,
               repeat: Infinity,
-              delay: Math.random() * 3,
+              delay: p.delay,
             }}
           />
         ))}
@@ -259,7 +267,7 @@ function PhotoSection({
               <div className="relative overflow-hidden rounded-lg aspect-[3/4] bg-dark-luxury">
                 <motion.img
                   src={photo}
-                  alt={captions[i] || 'Photo'}
+                  alt={captions[i] || 'Foto'}
                   className="w-full h-full object-cover"
                   animate={{
                     scale: [1, 1.08, 1],
@@ -296,7 +304,7 @@ function LongLetterSection({ message, sender }: { message: string; sender: strin
     >
       {/* Elegant background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold-accent/3 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold-accent/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-4xl">
@@ -459,16 +467,42 @@ function ChapterNav({
   );
 }
 
-function MusicButton({ musicTitle }: { musicTitle: string }) {
+function MusicButton({ music, musicTitle }: { music: string; musicTitle: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (music) {
+      audioRef.current = new Audio(`/${music}`);
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.3;
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      }
+    };
+  }, [music]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {});
+    }
+    setIsPlaying((prev) => !prev);
+  };
 
   return (
     <motion.button
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 2 }}
-      className="fixed bottom-8 left-8 z-50 flex items-center gap-3 px-5 py-3 bg-dark-luxury/80 backdrop-blur-md border border-gold-accent/30 rounded-full hover:border-gold-accent/60 transition-all duration-300 group"
-      onClick={() => setIsPlaying(!isPlaying)}
+      className="fixed bottom-8 left-8 z-50 flex items-center gap-3 px-5 py-3 bg-dark-luxury/80 backdrop-blur-md border border-gold-accent/30 rounded-full hover:border-gold-accent/60 transition-all duration-300 group min-h-[48px]"
+      onClick={togglePlay}
+      aria-label={isPlaying ? 'Jeda musik' : 'Putar musik'}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
@@ -522,7 +556,7 @@ function LoadingScreen() {
           <div className="w-full h-full border-t border-gold-accent rounded-full" />
         </motion.div>
         <p className="font-serif text-gold-accent/60 text-sm tracking-[0.3em] uppercase">
-          Loading
+          Memuat
         </p>
       </motion.div>
     </div>
@@ -578,7 +612,7 @@ export default function CinematicLetter() {
     <>
       <Head>
         <title>{config.title}</title>
-        <meta name="description" content={`A letter for ${config.recipient} from ${config.sender}`} />
+        <meta name="description" content={`Surat untuk ${config.recipient} dari ${config.sender}`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -667,7 +701,7 @@ export default function CinematicLetter() {
                     className="flex flex-col items-center gap-2"
                   >
                     <span className="text-xs text-gold-accent/40 tracking-[0.2em] uppercase">
-                      Scroll
+                      Gulir ke bawah
                     </span>
                     <div className="w-[1px] h-8 bg-gradient-to-b from-gold-accent/40 to-transparent" />
                   </motion.div>
@@ -700,7 +734,7 @@ export default function CinematicLetter() {
             <ChapterNav total={totalSections} activeChapter={activeChapter} />
 
             {/* Music Button */}
-            <MusicButton musicTitle={config.musicTitle} />
+            <MusicButton music={config.music} musicTitle={config.musicTitle} />
           </motion.div>
         )}
       </AnimatePresence>
