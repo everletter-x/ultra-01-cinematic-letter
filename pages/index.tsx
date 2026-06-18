@@ -567,7 +567,7 @@ export default function CinematicLetter() {
   if (error || !config) {
     return (
       <div className="min-h-screen bg-dark-luxury flex items-center justify-center">
-        <p className="text-rose">Failed to load configuration</p>
+        <p className="text-rose">Gagal memuat konfigurasi</p>
       </div>
     );
   }
