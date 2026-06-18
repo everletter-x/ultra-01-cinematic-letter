@@ -1,0 +1,17 @@
+{
+  "recipient": "Nabila",
+  "sender": "Rizky",
+  "title": "Untuk Seseorang yang Mengubah Hidupku",
+  "message": "Untuk seseorang yang mengubah hidupku tanpa banyak bicara.\n\nSetiap momen bersamamu terasa seperti adegan yang layak diingat.\n\nTerima kasih sudah menjadi rumah.",
+  "photos": ["photo1.jpg", "photo2.jpg", "photo3.jpg"],
+  "theme": "dark-luxury",
+  "music": "song.mp3",
+  "musicTitle": "我们的歌",
+  "template": "ultra-01",
+  "chapters": [
+    {"title": "Pertemuan", "text": "Aku ingat pertama kali kita bertemu. waktu itu..."},
+    {"title": "Perjalanan", "text": "Bersamamu, setiap hari menjadi petualangan baru."}
+  ],
+  "captions": ["Momen pertama", "Perjalanan kita", "Selamanya"],
+  "closing": "Terima kasih sudah menjadi rumahku."
+}
