@@ -13,5 +13,26 @@
     {"title": "", "text": ""}
   ],
   "captions": [],
-  "closing": ""
+  "closing": "",
+  "_example": {
+    "recipient": "Kamu",
+    "sender": "Aku",
+    "title": "Cinematic: Cerita Cinta Kita",
+    "message": "Dalam sinema kehidupan kita, kamu adalah bintang utama yang tak pernah padam.",
+    "chapters": [
+      {
+        "title": "Bab 1: Pertemuan",
+        "text": "Di antara jutaan manusia, takdir memilih kita untuk bersama. Seperti dua bintang yang jatuh dari langit yang sama, kita bertemu di bumi yang penuh dengan keajaiban."
+      },
+      {
+        "title": "Bab 2: Cinta",
+        "text": "Cinta kita bukan sekadar perasaan, tapi sebuah perjalanan spiritual yang mengajarkan kita tentang kesabaran, pengorbanan, dan kebahagiaan sejati."
+      },
+      {
+        "title": "Bab 3: Janji",
+        "text": "Di hadapan langit dan bumi, aku berjanji akan selalu ada untukmu, dalam suka maupun duka, sampai waktu yang tak berujung."
+      }
+    ],
+    "closing": "Untukmu, cinta sejatiku, selamanya."
+  }
 }
