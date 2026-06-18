@@ -630,6 +630,7 @@ export default function CinematicLetter() {
   return (
     <>
       <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <title>{config.title}</title>
         <meta name="description" content={`Surat untuk ${config.recipient} dari ${config.sender}`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
