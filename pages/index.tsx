@@ -738,7 +738,7 @@ export default function CinematicLetter() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/6282320114535?text=Halo%2C%20saya%20tertarik%20dengan%20EverLetter!"
+              href="https://wa.me/6282320114535?text=Halo%2C%20saya%20tertarik%20dengan%20EverLetter%20Cinematic%20Letter!"
               target="_blank"
               rel="noopener noreferrer"
               className="fixed bottom-6 left-6 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-600 transition-colors flex items-center gap-2 font-medium"
@@ -748,6 +748,12 @@ export default function CinematicLetter() {
               </svg>
               Pesan Sekarang
             </a>
+
+            {/* Pricing Badge */}
+            <div className="fixed bottom-6 right-6 z-50 bg-dark-luxury/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gold-accent/30">
+              <p className="text-elegant-white/60 text-xs mb-1">Ultra Premium</p>
+              <p className="text-2xl font-bold text-gold-accent">Rp 95K</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
