@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
-import { useConfigLoader } from '../shared';
 
 interface Chapter {
   title: string;
@@ -22,6 +21,23 @@ interface Config {
   captions: string[];
   closing: string;
 }
+
+function useConfigLoader<T>(path: string) {
+  const [config, setConfig] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  useEffect(() => {
+    fetch(path)
+      .then(r => r.json())
+      .then(d => {
+        setConfig(d);
+        setLoading(false);
+      })
+      .catch(e => {
+        setError(e);
+        setLoading(false);
+      });
+  }, [path]);
   return { config, loading, error };
 }
 
