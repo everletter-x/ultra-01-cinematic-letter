@@ -7,10 +7,14 @@ import Section from '../components/Section';
 /* ── Config Loader Hook ── */
 interface LetterConfig {
   theme?: string;
+  recipient?: string;
+  sender?: string;
   recipientName?: string;
   senderName?: string;
   message?: string[];
-  photos?: { src: string; alt: string; caption?: string }[];
+  photos?: { src: string; alt: string; caption?: string }[] | string[];
+  chapters?: { title: string; text: string }[];
+  captions?: string[];
   audioSrc?: string;
   autoplayAudio?: boolean;
   ultra?: boolean;
@@ -251,7 +255,7 @@ function HeroSection({ recipientName }: { recipientName?: string }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          A Letter For You
+          Sebuah Surat Untukmu
         </motion.p>
 
         <h1
@@ -276,7 +280,7 @@ function HeroSection({ recipientName }: { recipientName?: string }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2, duration: 1 }}
         >
-          Some words take a lifetime to write, but only a moment to read.
+          Beberapa kata butuh seumur hidup untuk ditulis, tapi hanya sekejap untuk dibaca.
         </motion.p>
       </motion.div>
 
@@ -318,11 +322,11 @@ function ParallaxSection({ children, speed = 0.5, className = "" }: { children: 
 /* ── Emotional Depth Section (new) ── */
 function EmotionalDepthSection() {
   const paragraphs = [
-    "I remember the first time I saw you — not just the way the light caught your eyes, but the way the entire room seemed to shift, as if the universe had rearranged itself to make space for you in my world. It was quiet, almost imperceptible, but I felt it in every fiber of my being.",
-    "There's a kind of love that doesn't announce itself with fireworks. It arrives like dawn — slowly, gently, painting the sky in colors you never knew existed. That's what you did to me. You turned my ordinary days into something worth remembering.",
-    "I've learned that love isn't about perfection. It's about showing up, day after day, with all your flaws exposed and your heart wide open. It's about choosing someone even when the world gives you a thousand reasons not to. And I choose you — every single day.",
-    "These words may fade with time, but the feelings they carry are etched into the deepest parts of me. You are not just a chapter in my story — you are the entire narrative, the thread that connects every meaningful moment I've ever known.",
-    "So here, in this quiet space between words and silence, I leave you with this: you are loved, deeply and completely, in ways that words could never fully capture. And that love — my love for you — will outlast every star in the sky.",
+    "Aku ingat pertama kali aku melihatmu — bukan hanya cahaya yang menangkap matamu, tapi cara seluruh ruangan seolah bergeser, seolah alam semesta telah menyusun ulang dirinya untuk memberi tempat bagimu di dunia ini. Itu sunyi, hampir tak terasa, tapi aku merasakannya di setiap serat keberadaanku.",
+    "Ada jenis cinta yang tidak mengumumkan dirinya dengan kembang api. Ia datang seperti fajar — perlahan, lembut, mewarnai langit dengan warna-warna yang tak pernah kau tahu ada. Itulah yang kau lakukan padaku. Kau mengubah hari-hariku yang biasa menjadi sesuatu yang layak dikenang.",
+    "Aku telah belajar bahwa cinta bukan tentang kesempurnaan. Ini tentang hadir, hari demi hari, dengan semua kekuranganmu terbuka dan hatimu lebar terbuka. Ini tentang memilih seseorang bahkan ketika dunia memberimu seribu alasan untuk tidak. Dan aku memilihmu — setiap hari.",
+    "Kata-kata ini mungkin pudar seiring waktu, tapi perasaan yang mereka bawa terukir di bagian terdalam diriku. Kau bukan sekadar bab dalam ceritaku — kau adalah seluruh narasi, benang yang menghubungkan setiap momen bermakna yang pernah kukenal.",
+    "Jadi di sini, dalam ruang sunyi antara kata dan keheningan, aku tinggalkan untukmu ini: kau dicintai, mendalam dan sepenuhnya, dengan cara yang tak bisa kata-kata ungkapkan sepenuhnya. Dan cinta itu — cintaku padamu — akan melampaui setiap bintang di langit.",
   ];
 
   return (
@@ -342,7 +346,7 @@ function EmotionalDepthSection() {
             </p>
             <h2 className="text-3xl md:text-4xl font-serif font-light tracking-wide"
               style={{ color: 'rgb(var(--primary))' }}>
-              The Quiet Hours
+              Jam-Jam Hening
             </h2>
             <div className="w-16 h-[1px] mx-auto mt-6"
               style={{ background: `linear-gradient(90deg, transparent, rgba(var(--primary), 0.3), transparent)` }} />
@@ -382,7 +386,7 @@ function EmotionalDepthSection() {
 function OpeningChapter({ message, recipientName }: { message?: string[]; recipientName?: string }) {
   const lines = message && message.length > 0
     ? message[0]?.split('\n') || []
-    : ['From the moment we met, something shifted in the universe.', 'A quiet realignment of stars that only now makes sense.'];
+    : [        'Sejak pertama kita bertemu, sesuatu telah berubah di alam semesta.', 'Penyesuaian bintang yang sunyi dan baru kini mengerti maknanya.'];
 
   return (
     <Section fullScreen>
@@ -396,7 +400,7 @@ function OpeningChapter({ message, recipientName }: { message?: string[]; recipi
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            Chapter One
+            Bab Satu
           </motion.p>
 
           <motion.p
@@ -407,7 +411,7 @@ function OpeningChapter({ message, recipientName }: { message?: string[]; recipi
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Dear {recipientName || 'You'}
+            Kepada {recipientName || 'Kamu'}
           </motion.p>
 
           <div className="space-y-5">
@@ -539,7 +543,7 @@ function ChapterDivider({ number }: { number: number }) {
         viewport={{ once: true }}
         transition={{ duration: 0.8, delay: 0.3 }}
       >
-        Chapter {number}
+        Bab {number}
       </motion.span>
       <motion.div
         className="h-px flex-1 max-w-20"
@@ -578,7 +582,7 @@ function ClosingSection({ senderName }: { senderName?: string }) {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          With Love
+          Dengan Cinta
         </motion.p>
 
         <motion.p
@@ -640,13 +644,13 @@ export default function Home() {
         autoPlay={config?.autoplayAudio}
       />
 
-      <HeroSection recipientName={config?.recipientName} />
+      <HeroSection recipientName={config?.recipientName || config?.recipient} />
 
       <ChapterDivider number={1} />
 
       <OpeningChapter
-        message={config?.message}
-        recipientName={config?.recipientName}
+        message={config?.chapters?.map(c => c.text) || config?.message}
+        recipientName={config?.recipientName || config?.recipient}
       />
 
       {/* Photo Gallery */}
