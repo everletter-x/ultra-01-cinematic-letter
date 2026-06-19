@@ -2,12 +2,16 @@
   "recipient": "Sena",
   "sender": "Aku",
   "title": "Cinematic: Cerita Cinta Sena",
-  "message": "Dalam sinema kehidupan kita, kamu adalah bintang utama yang tak pernah padam.",
+  "message": [
+    "Dalam sinema kehidupan kita, kamu adalah bintang utama yang tak pernah padam. Setiap adegan, setiap dialog, setiap momen diam — semuanya menjadi masterpiece karena kehadiranmu.",
+    "Bayangkan sebuah film tanpa soundtrack — sunyi, tanpa emosi, tanpa jiwa. Begitulah hidupku sebelum kamu datang. Lalu kamu muncul, dan segalanya berubah.",
+    "Cinta kita bukan sekadar cerita romantis biasa. Ia adalah epik tentang dua jiwa yang menemukan satu sama lain di tengah kekacauan dunia."
+  ],
   "photos": [
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&q=80",
-    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&q=80",
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&q=80",
-    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&q=80"
+    "photo-1.jpg",
+    "photo-2.jpg",
+    "photo-3.jpg",
+    "photo-4.jpg"
   ],
   "theme": "dark-luxury",
   "music": "music/cinematic-strings.mp3",
@@ -16,22 +20,22 @@
   "chapters": [
     {
       "title": "Bab 1: Pertemuan",
-      "text": "Di antara jutaan manusia, takdir memilih kita untuk bersama."
+      "text": "Di antara jutaan manusia, takdir memilih kita untuk bersama. Seperti dua bintang yang berputar dalam orbit yang sama, kita ditarik oleh kekuatan yang melampaui pemahaman."
     },
     {
       "title": "Bab 2: Cinta",
-      "text": "Cinta kita bukan sekadar perasaan, tapi sebuah perjalanan spiritual."
+      "text": "Cinta kita bukan sekadar perasaan, tapi sebuah perjalanan spiritual. Setiap langkah yang kita ambil bersama adalah bukti bahwa cinta sejati itu nyata dan abadi."
     },
     {
       "title": "Bab 3: Janji",
-      "text": "Di hadapan langit dan bumi, aku berjanji akan selalu ada untukmu."
+      "text": "Di hadapan langit dan bumi, aku berjanji akan selalu ada untukmu. Bukan karena kewajiban, tapi karena hatiku hanya tahu satu cara untuk berdetak — untukmu."
     }
   ],
   "captions": [
-    "Momen pertama kita bertemu",
-    "Senyummu yang selalu kurindukan",
-    "Saat kita tertawa bersama",
-    "Cinta kita, abadi selamanya"
+    "Momen pertama kita bertemu — waktu seolah berhenti sejenak",
+    "Senyummu yang selalu kurindukan bahkan dalam mimpi",
+    "Saat kita tertawa bersama tanpa peduli dunia di sekitar kita",
+    "Cinta kita, abadi selamanya seperti bintang yang tak pernah padam"
   ],
-  "closing": "Untukmu, Sena, cinta sejatiku, selamanya."
+  "closing": "Untukmu, Sena, cinta sejatiku, selamanya. Semoga sinema cinta kita tak pernah berakhir, dan setiap adegan baru selalu lebih indah dari yang sebelumnya."
 }
