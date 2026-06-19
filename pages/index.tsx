@@ -1,813 +1,699 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Head from 'next/head';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import BaseLayout from '../components/BaseLayout';
+import MusicPlayer from '../components/MusicPlayer';
+import Section from '../components/Section';
 
-interface Chapter {
-  title: string;
-  text: string;
+/* ── Config Loader Hook ── */
+interface LetterConfig {
+  theme?: string;
+  recipientName?: string;
+  senderName?: string;
+  message?: string[];
+  photos?: { src: string; alt: string; caption?: string }[];
+  audioSrc?: string;
+  autoplayAudio?: boolean;
+  ultra?: boolean;
 }
 
-interface Config {
-  recipient: string;
-  sender: string;
-  title: string;
-  message: string;
-  photos: string[];
-  theme: string;
-  music: string;
-  musicTitle: string;
-  template: string;
-  chapters: Chapter[];
-  captions: string[];
-  closing: string;
-}
-
-function useConfigLoader<T>(path: string) {
-  const [config, setConfig] = useState<T | null>(null);
+function useConfigLoader(path?: string) {
+  const [config, setConfig] = useState<LetterConfig | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    fetch(path)
-      .then(r => r.json())
-      .then(d => {
-        setConfig(d);
+    const loadConfig = async () => {
+      try {
+        let res: Response;
+        if (path) {
+          res = await fetch(path);
+        } else {
+          res = await fetch('/api/config');
+        }
+        if (!res.ok) throw new Error(`Failed to load config (${res.status})`);
+        const data: LetterConfig = await res.json();
+        setConfig(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
         setLoading(false);
-      })
-      .catch(e => {
-        setError(e);
-        setLoading(false);
-      });
+      }
+    };
+    loadConfig();
   }, [path]);
+
   return { config, loading, error };
 }
 
-function useIntersectionObserver(threshold = 0.5) {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold }
-    );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return { ref, isVisible };
-}
-
-function ChapterSection({
-  chapter,
-  index,
-  total,
-  photo,
-  caption,
-}: {
-  chapter: Chapter;
-  index: number;
-  total: number;
-  photo?: string;
-  caption?: string;
-}) {
-  const { ref, isVisible } = useIntersectionObserver(0.3);
-
-  const gradients = [
-    'from-deep-black via-dark-luxury/80 to-deep-black',
-    'from-dark-luxury via-[#1a1520] to-dark-luxury',
-    'from-dark-luxury via-[#1a1015] to-dark-luxury',
-    'from-deep-black via-dark-luxury/90 to-deep-black',
-  ];
+/* ── Gold Particle Field ── */
+function GoldParticleField({ count = 20 }: { count?: number }) {
+  const particles = useMemo(() => Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 3 + 1,
+    duration: Math.random() * 8 + 6,
+    delay: Math.random() * 5,
+  })), [count]);
 
   return (
-    <section
-      ref={ref}
-      className={`relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b ${
-        gradients[index % gradients.length]
-      }`}
-    >
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {particles.map((p) => (
         <motion.div
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold-accent/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            backgroundColor: 'rgba(var(--primary), 0.12)',
+            boxShadow: `0 0 ${p.size * 2}px rgba(var(--primary), 0.08)`,
           }}
-          transition={{ duration: 8, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose/5 rounded-full blur-3xl"
           animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
+            y: [0, -120, 0],
+            opacity: [0, 0.6, 0],
+            scale: [0.5, 1, 0.5],
           }}
-          transition={{ duration: 10, repeat: Infinity }}
-        />
-      </div>
-
-      {/* Chapter number */}
-      <motion.div
-        className="absolute top-8 left-8 md:top-12 md:left-12"
-        initial={{ opacity: 0, x: -20 }}
-        animate={isVisible ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        <span className="text-gold-accent/40 font-serif text-sm tracking-[0.3em] uppercase">
-          Bab {String(index + 1).padStart(2, '0')}
-        </span>
-      </motion.div>
-
-      <div className="container mx-auto px-6 md:px-12 lg:px-24 py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Text side */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={isVisible ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 1, delay: 0.3 }}
-            className={index % 2 === 0 ? 'lg:order-1' : 'lg:order-2'}
-          >
-            <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl text-elegant-white mb-6 leading-tight">
-              {chapter.title}
-            </h2>
-            <div className="w-16 h-[1px] bg-gradient-to-r from-gold-accent to-transparent mb-8" />
-            <p className="font-serif text-lg md:text-xl text-warm-white/70 leading-relaxed italic">
-              {chapter.text}
-            </p>
-            {caption && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={isVisible ? { opacity: 1 } : {}}
-                transition={{ duration: 0.8, delay: 0.8 }}
-                className="mt-8 text-gold-accent/60 text-sm tracking-widest uppercase"
-              >
-                {caption}
-              </motion.p>
-            )}
-          </motion.div>
-
-          {/* Photo side */}
-          {photo && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={isVisible ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 1.2, delay: 0.5 }}
-              className={`${index % 2 === 0 ? 'lg:order-2' : 'lg:order-1'} flex justify-center`}
-            >
-              <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-br from-gold-accent/20 to-rose/20 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-                <motion.div
-                  className="relative overflow-hidden rounded-lg shadow-2xl"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <motion.img
-                    src={photo}
-                    alt={caption || 'Foto'}
-                    loading="lazy"
-                    className="w-full max-w-md h-auto object-cover"
-                    animate={{
-                      scale: [1, 1.05, 1],
-                      x: [0, -5, 0],
-                    }}
-                    transition={{
-                      duration: 15,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  />
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Chapter progress line */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gold-accent/30 to-transparent" />
-    </section>
-  );
-}
-
-function PhotoSection({
-  photos,
-  captions,
-}: {
-  photos: string[];
-  captions: string[];
-}) {
-  const { ref, isVisible } = useIntersectionObserver(0.2);
-
-  const particles = useMemo(() => 
-    [...Array(15)].map((_, i) => ({
-      left: `${(i * 7 + 3) % 100}%`,
-      top: `${(i * 11 + 5) % 100}%`,
-      duration: 3 + (i % 4),
-      delay: (i % 5) * 0.6,
-    })), []);
-
-  return (
-    <section
-      ref={ref}
-      className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-luxury via-deep-black to-dark-luxury overflow-hidden py-20"
-    >
-      {/* Background particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {particles.map((p, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-1 h-1 bg-gold-accent/30 rounded-full"
-            style={{
-              left: p.left,
-              top: p.top,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.3, 0.8, 0.3],
-            }}
-            transition={{
-              duration: p.duration,
-              repeat: Infinity,
-              delay: p.delay,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="container mx-auto px-6 md:px-12">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={isVisible ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
-        >
-          <h2 className="font-serif text-3xl md:text-4xl text-elegant-white mb-4">
-            Momen-Momen Kita
-          </h2>
-          <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-gold-accent to-transparent mx-auto" />
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {photos.map((photo, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 50 }}
-              animate={isVisible ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 * i }}
-              className="relative group"
-            >
-              <div className="absolute -inset-1 bg-gradient-to-br from-gold-accent/30 to-rose/30 rounded-lg blur opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
-              <div className="relative overflow-hidden rounded-lg aspect-[3/4] bg-dark-luxury">
-                <motion.img
-                  src={photo}
-                  alt={captions[i] || 'Foto'}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                  animate={{
-                    scale: [1, 1.08, 1],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-deep-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <p className="font-serif text-sm text-gold-accent/80 tracking-widest uppercase">
-                    {captions[i]}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LongLetterSection({ message, sender }: { message: string; sender: string }) {
-  const { ref, isVisible } = useIntersectionObserver(0.2);
-  const paragraphs = message.split('\n\n');
-
-  return (
-    <section
-      ref={ref}
-      className="relative min-h-screen flex items-center justify-center bg-gradient-to-b from-dark-luxury via-[#0d0a0f] to-dark-luxury overflow-hidden py-20"
-    >
-      {/* Elegant background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold-accent/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-4xl">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isVisible ? { opacity: 1 } : {}}
-          transition={{ duration: 1 }}
-          className="relative"
-        >
-          {/* Decorative quote mark */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={isVisible ? { opacity: 0.15, scale: 1 } : {}}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="absolute -top-12 -left-8 text-gold-accent font-serif text-[120px] leading-none select-none"
-          >
-            &ldquo;
-          </motion.div>
-
-          <div className="space-y-8">
-            {paragraphs.map((paragraph, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                animate={isVisible ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.8, delay: 0.2 * i + 0.5 }}
-              >
-                {i === 0 ? (
-                  <p className="font-serif text-xl md:text-2xl text-elegant-white leading-relaxed">
-                    <span className="float-left text-6xl md:text-7xl text-gold-accent mr-3 mt-1 leading-none font-serif">
-                      {paragraph.charAt(0)}
-                    </span>
-                    {paragraph.slice(1)}
-                  </p>
-                ) : (
-                  <p className="font-serif text-xl md:text-2xl text-elegant-white/90 leading-relaxed italic">
-                    {paragraph}
-                  </p>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={isVisible ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 1.5 }}
-            className="mt-12 text-right"
-          >
-            <p className="font-serif text-lg text-gold-accent/70 italic">
-              Dengan cinta,
-            </p>
-            <p className="font-serif text-2xl text-elegant-white mt-2">
-              {sender}
-            </p>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function ClosingSection({ closing, recipient }: { closing: string; recipient: string }) {
-  const { ref, isVisible } = useIntersectionObserver(0.3);
-
-  return (
-    <section
-      ref={ref}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-    >
-      {/* Cinematic background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-dark-luxury via-deep-black to-dark-luxury">
-        <motion.div
-          className="absolute inset-0"
-          animate={{
-            background: [
-              'radial-gradient(circle at 30% 40%, rgba(201,169,110,0.08) 0%, transparent 50%)',
-              'radial-gradient(circle at 70% 60%, rgba(201,169,110,0.08) 0%, transparent 50%)',
-              'radial-gradient(circle at 30% 40%, rgba(201,169,110,0.08) 0%, transparent 50%)',
-            ],
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            delay: p.delay,
+            ease: 'easeInOut',
           }}
-          transition={{ duration: 10, repeat: Infinity }}
         />
-      </div>
-
-      <div className="relative z-10 text-center px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={isVisible ? { opacity: 1, scale: 1 } : {}}
-          transition={{ duration: 1.5, ease: 'easeOut' }}
-        >
-          <motion.p
-            className="font-serif text-5xl md:text-6xl lg:text-7xl text-elegant-white mb-8 leading-tight"
-            animate={
-              isVisible
-                ? { textShadow: ['0 0 0px rgba(201,169,110,0)', '0 0 30px rgba(201,169,110,0.3)', '0 0 0px rgba(201,169,110,0)'] }
-                : {}
-            }
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            {closing}
-          </motion.p>
-
-          <motion.div
-            initial={{ width: 0 }}
-            animate={isVisible ? { width: '100px' } : {}}
-            transition={{ duration: 1, delay: 0.8 }}
-            className="h-[1px] bg-gradient-to-r from-transparent via-gold-accent to-transparent mx-auto mb-8"
-          />
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={isVisible ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 1.2 }}
-            className="font-serif text-xl text-gold-accent/60 tracking-[0.2em]"
-          >
-            Untuk {recipient}
-          </motion.p>
-        </motion.div>
-      </div>
-
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-deep-black to-transparent" />
-    </section>
-  );
-}
-
-function ChapterNav({
-  total,
-  activeChapter,
-}: {
-  total: number;
-  activeChapter: number;
-}) {
-  return (
-    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3">
-      {[...Array(total)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="relative"
-          whileHover={{ scale: 1.5 }}
-        >
-          <div
-            className={`w-2 h-2 rounded-full transition-all duration-500 ${
-              i === activeChapter
-                ? 'bg-gold-accent shadow-[0_0_10px_rgba(201,169,110,0.5)]'
-                : 'bg-gold-accent/20 hover:bg-gold-accent/50'
-            }`}
-          />
-          {i === activeChapter && (
-            <motion.div
-              layoutId="activeChapter"
-              className="absolute -inset-1 rounded-full border border-gold-accent/50"
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            />
-          )}
-        </motion.div>
       ))}
     </div>
   );
 }
 
-function MusicButton({ music, musicTitle }: { music: string; musicTitle: string }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (music) {
-      audioRef.current = new Audio(`/${music}`);
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.3;
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-    };
-  }, [music]);
-
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play().catch(() => {});
-    }
-    setIsPlaying((prev) => !prev);
-  };
-
+/* ── Film Grain Overlay (unique to Cinematic) ── */
+function FilmGrain() {
   return (
-    <motion.button
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: 2 }}
-      className="fixed bottom-8 left-8 z-50 flex items-center gap-3 px-5 py-3 bg-dark-luxury/80 backdrop-blur-md border border-gold-accent/30 rounded-full hover:border-gold-accent/60 transition-all duration-300 group min-h-[48px]"
-      onClick={togglePlay}
-      aria-label={isPlaying ? 'Jeda musik' : 'Putar musik'}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-    >
+    <div className="fixed inset-0 pointer-events-none z-[60] opacity-[0.03] mix-blend-overlay">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E")`,
+          backgroundSize: '128px 128px',
+        }}
+      />
       <motion.div
-        animate={isPlaying ? { rotate: 360 } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-        className="w-5 h-5 flex items-center justify-center"
-      >
-        {isPlaying ? (
-          <div className="flex gap-0.5">
-            <motion.div
-              className="w-0.5 h-3 bg-gold-accent"
-              animate={{ scaleY: [1, 1.5, 1] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-            />
-            <motion.div
-              className="w-0.5 h-3 bg-gold-accent"
-              animate={{ scaleY: [1.5, 1, 1.5] }}
-              transition={{ duration: 0.5, repeat: Infinity }}
-            />
-            <motion.div
-              className="w-0.5 h-3 bg-gold-accent"
-              animate={{ scaleY: [1, 1.5, 1] }}
-              transition={{ duration: 0.5, repeat: Infinity, delay: 0.2 }}
-            />
-          </div>
-        ) : (
-          <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-gold-accent border-b-[5px] border-b-transparent ml-0.5" />
-        )}
-      </motion.div>
-      <span className="text-xs text-gold-accent/70 font-serif tracking-wider">
-        {musicTitle}
-      </span>
-    </motion.button>
-  );
-}
-
-function LoadingScreen() {
-  return (
-    <div className="fixed inset-0 z-[100] bg-deep-black flex items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="text-center"
-      >
-        <motion.div
-          className="w-12 h-12 border border-gold-accent/30 rounded-full mx-auto mb-6"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-        >
-          <div className="w-full h-full border-t border-gold-accent rounded-full" />
-        </motion.div>
-        <p className="font-serif text-gold-accent/60 text-sm tracking-[0.3em] uppercase">
-          Memuat
-        </p>
-      </motion.div>
+        className="absolute inset-0"
+        animate={{ x: [0, 2, -1, 1, 0], y: [0, -1, 2, -2, 0] }}
+        transition={{ duration: 0.5, repeat: Infinity, ease: 'linear' }}
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.7'/%3E%3C/svg%3E")`,
+          backgroundSize: '200px 200px',
+        }}
+      />
     </div>
   );
 }
 
-export default function CinematicLetter() {
-  const { config, loading, error } = useConfigLoader<Config>('/config.json');
-  const [activeChapter, setActiveChapter] = useState(0);
-  const [showContent, setShowContent] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+/* ── Cinematic Scroll Progress ── */
+function ScrollProgress({ progress }: { progress: any }) {
+  return (
+    <motion.div
+      className="fixed top-0 left-0 right-0 h-[2px] z-50 origin-left"
+      style={{
+        scaleX: progress,
+        background: 'linear-gradient(90deg, rgb(var(--primary)), rgb(var(--primary-dim)))',
+      }}
+    />
+  );
+}
 
-  useEffect(() => {
-    if (!loading && config) {
-      const timer = setTimeout(() => setShowContent(true), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, config]);
+/* ── Cinematic Loading Screen ── */
+function LoadingScreen() {
+  return (
+    <motion.div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
+      style={{ backgroundColor: 'rgb(var(--bg-start))' }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 1.2, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      {/* Cinematic letterbox bars */}
+      <motion.div
+        className="absolute top-0 left-0 right-0 h-8"
+        style={{ backgroundColor: 'rgb(var(--bg-start))' }}
+        initial={{ y: 0 }}
+        animate={{ y: -32 }}
+        transition={{ delay: 1.5, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-8"
+        style={{ backgroundColor: 'rgb(var(--bg-start))' }}
+        initial={{ y: 0 }}
+        animate={{ y: 32 }}
+        transition={{ delay: 1.5, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      />
 
-  useEffect(() => {
-    let rafId: number | null = null;
-    const handleScroll = () => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (!containerRef.current) return;
-        const sections = containerRef.current.querySelectorAll('section');
-        const scrollPosition = window.scrollY + window.innerHeight / 2;
+      {/* Rotating diamond */}
+      <motion.div
+        className="relative w-20 h-20 mb-8"
+        animate={{ rotate: 45 }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+      >
+        <div
+          className="absolute inset-2 border rotate-45"
+          style={{
+            borderColor: 'rgb(var(--primary))',
+            boxShadow: '0 0 30px rgba(var(--primary), 0.2)',
+          }}
+        />
+        <div
+          className="absolute inset-4 border"
+          style={{
+            borderColor: 'rgba(var(--primary), 0.3)',
+            transform: 'rotate(22.5deg)',
+          }}
+        />
+      </motion.div>
 
-        sections.forEach((section, index) => {
-          const sectionTop = section.offsetTop;
-          const sectionBottom = sectionTop + section.offsetHeight;
+      <motion.p
+        className="text-xs tracking-[0.5em] uppercase"
+        style={{ color: 'rgb(var(--primary-dim))' }}
+        initial={{ opacity: 0, letterSpacing: '0.8em' }}
+        animate={{ opacity: 1, letterSpacing: '0.5em' }}
+        transition={{ delay: 0.5, duration: 1 }}
+      >
+        Cinematic Letter
+      </motion.p>
 
-          if (scrollPosition >= sectionTop && scrollPosition <= sectionBottom) {
-            setActiveChapter(index);
-          }
-        });
-      });
-    };
+      {/* Loading progress */}
+      <motion.div
+        className="mt-8 h-[1px] w-32 origin-left"
+        style={{ backgroundColor: 'rgba(var(--primary), 0.2)' }}
+      >
+        <motion.div
+          className="h-full"
+          style={{ backgroundColor: 'rgb(var(--primary))' }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1] }}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (rafId) cancelAnimationFrame(rafId);
-    };
+/* ── Hero Section with parallax + 3D tilt ── */
+function HeroSection({ recipientName }: { recipientName?: string }) {
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
+  const y = useTransform(scrollYProgress, [0, 0.15], [0, 150]);
+  const scale = useTransform(scrollYProgress, [0, 0.15], [1, 0.95]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.15], [0, 5]);
+
+  return (
+    <motion.section
+      className="relative min-h-[110vh] flex flex-col items-center justify-center px-5 overflow-hidden"
+      style={{ opacity, y, scale, rotateX, transformPerspective: 1200 }}
+    >
+      {/* Cinematic rotating rings */}
+      <motion.div
+        className="absolute w-[700px] h-[700px] rounded-full"
+        style={{ border: '1px solid rgba(var(--primary), 0.04)' }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.div
+        className="absolute w-[500px] h-[500px] rounded-full"
+        style={{ border: '1px solid rgba(var(--primary), 0.06)' }}
+        animate={{ rotate: -360 }}
+        transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.div
+        className="absolute w-[300px] h-[300px] rounded-full"
+        style={{ border: '1px solid rgba(var(--primary), 0.08)' }}
+        animate={{ rotate: 360 }}
+        transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+      />
+      {/* Central glow */}
+      <div
+        className="absolute w-[200px] h-[200px] rounded-full opacity-20"
+        style={{
+          background: 'radial-gradient(circle, rgba(var(--primary), 0.3), transparent 70%)',
+        }}
+      />
+
+      <motion.div
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+        className="text-center relative z-10"
+      >
+        <motion.p
+          className="text-[10px] tracking-[0.6em] uppercase mb-8"
+          style={{ color: 'rgb(var(--primary-dim))' }}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          A Letter For You
+        </motion.p>
+
+        <h1
+          className="text-5xl md:text-7xl lg:text-[7rem] font-serif mb-8 leading-[1.1] tracking-tight"
+          style={{ color: 'rgb(var(--primary))' }}
+        >
+          {recipientName || 'Dear You'}
+        </h1>
+
+        <motion.div
+          className="w-12 h-px mx-auto mb-6"
+          style={{ backgroundColor: 'rgb(var(--primary))' }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 1, duration: 0.8 }}
+        />
+
+        <motion.p
+          className="text-sm md:text-base max-w-lg mx-auto leading-relaxed font-serif-alt italic"
+          style={{ color: 'rgb(var(--text-muted))' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2, duration: 1 }}
+        >
+          Some words take a lifetime to write, but only a moment to read.
+        </motion.p>
+      </motion.div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-12"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+      >
+        <motion.div
+          className="w-6 h-10 rounded-full border flex justify-center pt-2"
+          style={{ borderColor: 'rgba(var(--primary), 0.2)' }}
+        >
+          <motion.div
+            className="w-[2px] h-2 rounded-full"
+            style={{ backgroundColor: 'rgb(var(--primary))' }}
+            animate={{ y: [0, 12, 0], opacity: [1, 0.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        </motion.div>
+      </motion.div>
+    </motion.section>
+  );
+}
+
+/* ── 3D Parallax Section Wrapper ── */
+function ParallaxSection({ children, speed = 0.5, className = "" }: { children: React.ReactNode; speed?: number; className?: string }) {
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [80 * speed, -80 * speed]);
+  const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [1.5, 0, -1.5]);
+  return (
+    <motion.div className={className} style={{ y, rotateX, transformPerspective: 1200, transformStyle: "preserve-3d" }}>
+      {children}
+    </motion.div>
+  );
+}
+
+/* ── Emotional Depth Section (new) ── */
+function EmotionalDepthSection() {
+  const paragraphs = [
+    "I remember the first time I saw you — not just the way the light caught your eyes, but the way the entire room seemed to shift, as if the universe had rearranged itself to make space for you in my world. It was quiet, almost imperceptible, but I felt it in every fiber of my being.",
+    "There's a kind of love that doesn't announce itself with fireworks. It arrives like dawn — slowly, gently, painting the sky in colors you never knew existed. That's what you did to me. You turned my ordinary days into something worth remembering.",
+    "I've learned that love isn't about perfection. It's about showing up, day after day, with all your flaws exposed and your heart wide open. It's about choosing someone even when the world gives you a thousand reasons not to. And I choose you — every single day.",
+    "These words may fade with time, but the feelings they carry are etched into the deepest parts of me. You are not just a chapter in my story — you are the entire narrative, the thread that connects every meaningful moment I've ever known.",
+    "So here, in this quiet space between words and silence, I leave you with this: you are loved, deeply and completely, in ways that words could never fully capture. And that love — my love for you — will outlast every star in the sky.",
+  ];
+
+  return (
+    <Section>
+      <ParallaxSection speed={0.1}>
+        <div className="max-w-3xl mx-auto space-y-12">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ y: 30, opacity: 0 }}
+            whileInView={{ y: 0, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <p className="text-[10px] tracking-[0.5em] uppercase mb-4 font-semibold"
+              style={{ color: 'rgb(var(--primary-dim))' }}>
+              Perasaanku
+            </p>
+            <h2 className="text-3xl md:text-4xl font-serif font-light tracking-wide"
+              style={{ color: 'rgb(var(--primary))' }}>
+              The Quiet Hours
+            </h2>
+            <div className="w-16 h-[1px] mx-auto mt-6"
+              style={{ background: `linear-gradient(90deg, transparent, rgba(var(--primary), 0.3), transparent)` }} />
+          </motion.div>
+
+          {paragraphs.map((text, i) => (
+            <motion.div
+              key={i}
+              initial={{ y: 40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true, margin: "-5%" }}
+              transition={{ duration: 0.8, delay: i * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              <p className="text-lg md:text-xl leading-[2] font-serif-alt italic text-white/80">
+                {i === 0 && (
+                  <span className="text-5xl md:text-6xl font-serif float-left mr-3 mt-1 leading-none"
+                    style={{ color: 'rgb(var(--primary))' }}>
+                    {text.charAt(0)}
+                  </span>
+                )}
+                {i === 0 ? text.slice(1) : text}
+              </p>
+              {i < paragraphs.length - 1 && (
+                <div className="flex justify-center mt-10">
+                  <div className="w-1.5 h-1.5 rotate-45 border border-white/10" />
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+      </ParallaxSection>
+    </Section>
+  );
+}
+
+/* ── Opening Chapter ── */
+function OpeningChapter({ message, recipientName }: { message?: string[]; recipientName?: string }) {
+  const lines = message && message.length > 0
+    ? message[0]?.split('\n') || []
+    : ['From the moment we met, something shifted in the universe.', 'A quiet realignment of stars that only now makes sense.'];
+
+  return (
+    <Section fullScreen>
+      <ParallaxSection speed={0.12}>
+        <div className="glass p-8 md:p-16 max-w-3xl mx-auto">
+          <motion.p
+            className="text-[10px] tracking-[0.4em] uppercase mb-8"
+            style={{ color: 'rgb(var(--primary-dim))' }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            Chapter One
+          </motion.p>
+
+          <motion.p
+            className="text-xs tracking-[0.25em] uppercase mb-6"
+            style={{ color: 'rgb(var(--primary-dim))' }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            Dear {recipientName || 'You'}
+          </motion.p>
+
+          <div className="space-y-5">
+            {lines.map((line, i) => (
+              <motion.p
+                key={i}
+                className="text-lg md:text-xl leading-[1.8] font-serif-alt italic"
+                style={{ color: 'rgb(var(--text))' }}
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 + i * 0.2, duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                {i === 0 && (
+                  <span className="text-5xl md:text-6xl font-serif float-left mr-3 mt-1 leading-none" style={{ color: 'rgb(var(--primary))' }}>
+                    {line.charAt(0)}
+                  </span>
+                )}
+                {i === 0 ? line.slice(1) : line}
+              </motion.p>
+            ))}
+          </div>
+
+          <motion.div
+            className="mt-10 h-px w-20"
+            style={{ backgroundColor: 'rgb(var(--primary))' }}
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, delay: 0.5 }}
+          />
+        </div>
+      </ParallaxSection>
+    </Section>
+  );
+}
+
+/* ── Photo Card with Ken Burns effect ── */
+function PhotoCard({ src, alt, caption, index }: { src: string; alt: string; caption?: string; index: number }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = (y - centerY) / 25;
+    const rotateY = (centerX - x) / 25;
+    card.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.03, 1.03, 1.03)`;
   }, []);
 
-  if (loading) return <LoadingScreen />;
+  const handleMouseLeave = useCallback(() => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transform = 'perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+  }, []);
 
-  if (error || !config) {
-    return (
-      <div className="min-h-screen bg-dark-luxury flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-rose mb-4">Gagal memuat konfigurasi</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-gold-accent/20 text-gold-accent rounded-lg hover:bg-gold-accent/30 transition-colors"
-          >
-            Coba Lagi
-          </button>
-        </div>
+  return (
+    <motion.div
+      ref={cardRef}
+      className="relative group cursor-pointer"
+      initial={{ opacity: 0, y: 50 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ delay: index * 0.12, duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ transition: 'transform 0.25s ease-out' }}
+    >
+      <div className="glass overflow-hidden rounded-glass">
+        {/* Ken Burns slow zoom */}
+        <motion.div
+          className="aspect-[4/5] bg-cover bg-center"
+          style={{ backgroundImage: `url(${src})` }}
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 12 + index * 2, repeat: Infinity, ease: 'easeInOut' }}
+        />
       </div>
+      {caption && (
+        <motion.p
+          className="mt-4 text-[11px] text-center tracking-[0.15em] font-serif-alt italic"
+          style={{ color: 'rgb(var(--text-muted))' }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: index * 0.12 + 0.3 }}
+        >
+          {caption}
+        </motion.p>
+      )}
+      {/* Hover glow */}
+      <div
+        className="absolute inset-0 rounded-glass opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, rgba(var(--primary), 0.08), transparent 70%)',
+        }}
+      />
+      {/* Cinematic vignette on hover */}
+      <div
+        className="absolute inset-0 rounded-glass opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
+        style={{
+          boxShadow: 'inset 0 0 60px rgba(0,0,0,0.4)',
+        }}
+      />
+    </motion.div>
+  );
+}
+
+/* ── Chapter Divider ── */
+function ChapterDivider({ number }: { number: number }) {
+  return (
+    <div className="flex items-center justify-center gap-6 py-16">
+      <motion.div
+        className="h-px flex-1 max-w-20"
+        style={{ backgroundColor: 'rgba(var(--primary), 0.15)' }}
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+      />
+      <motion.span
+        className="text-[10px] tracking-[0.5em] uppercase"
+        style={{ color: 'rgb(var(--primary-dim))' }}
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+      >
+        Chapter {number}
+      </motion.span>
+      <motion.div
+        className="h-px flex-1 max-w-20"
+        style={{ backgroundColor: 'rgba(var(--primary), 0.15)' }}
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+      />
+    </div>
+  );
+}
+
+/* ── Closing Section ── */
+function ClosingSection({ senderName }: { senderName?: string }) {
+  return (
+    <Section fullScreen>
+      <div className="text-center">
+        <motion.div
+          className="mb-10"
+          initial={{ scale: 0, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          <svg className="w-10 h-10 mx-auto" style={{ color: 'rgb(var(--primary))' }} fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+        </motion.div>
+
+        <motion.p
+          className="text-xs tracking-[0.4em] uppercase mb-6"
+          style={{ color: 'rgb(var(--primary-dim))' }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          With Love
+        </motion.p>
+
+        <motion.p
+          className="text-3xl md:text-4xl lg:text-5xl font-serif"
+          style={{ color: 'rgb(var(--primary))' }}
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+        >
+          {senderName || 'Me'}
+        </motion.p>
+
+        <motion.div
+          className="mt-10 h-px w-16 mx-auto"
+          style={{ backgroundColor: 'rgba(var(--primary), 0.3)' }}
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        />
+      </div>
+    </Section>
+  );
+}
+
+/* ── Main Page ── */
+export default function Home() {
+  const { config, loading } = useConfigLoader();
+  const { scrollYProgress } = useScroll();
+  const scrollProgress = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const [showLoading, setShowLoading] = useState(true);
+  const theme = config?.theme || 'ultra-cinematic';
+  const ultra = true;
+
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setShowLoading(false), 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  if (loading || showLoading) {
+    return (
+      <BaseLayout theme={theme} ultra={ultra}>
+        <LoadingScreen />
+      </BaseLayout>
     );
   }
 
-  const totalSections = 1 + config.chapters.length + 2 + 1; // opening + chapters + photos + letter + closing
-
   return (
-    <>
-      <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <title>{config.title}</title>
-        <meta name="description" content={`Surat untuk ${config.recipient} dari ${config.sender}`} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"
-          rel="stylesheet"
-        />
-      </Head>
+    <BaseLayout theme={theme} ultra={ultra} className="relative">
+      <ScrollProgress progress={scrollProgress} />
+      <GoldParticleField count={18} />
+      <FilmGrain />
 
-      <AnimatePresence>
-        {showContent && (
-          <motion.div
-            ref={containerRef}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
-          >
-            {/* Opening Scene */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-              {/* Cinematic background */}
-              <div className="absolute inset-0 bg-gradient-to-b from-deep-black via-dark-luxury to-deep-black" />
+      <MusicPlayer
+        audioSrc={config?.audioSrc}
+        autoPlay={config?.autoplayAudio}
+      />
 
-              {/* Animated light rays */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <motion.div
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]"
-                  animate={{
-                    rotate: [0, 360],
-                  }}
-                  transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
-                >
-                  <div className="absolute inset-0 bg-gradient-conic from-gold-accent/10 via-transparent to-transparent rounded-full" />
-                </motion.div>
-              </div>
+      <HeroSection recipientName={config?.recipientName} />
 
-              <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
-                {/* Top decorative line */}
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: '120px' }}
-                  transition={{ duration: 1.5, delay: 0.5 }}
-                  className="h-[1px] bg-gradient-to-r from-transparent via-gold-accent to-transparent mx-auto mb-12"
-                />
+      <ChapterDivider number={1} />
 
-                {/* Title */}
-                <motion.h1
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 1, delay: 0.8 }}
-                  className="font-serif text-5xl md:text-6xl lg:text-7xl text-elegant-white mb-6 leading-tight"
-                >
-                  {config.title}
-                </motion.h1>
+      <OpeningChapter
+        message={config?.message}
+        recipientName={config?.recipientName}
+      />
 
-                {/* Decorative element */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.8, delay: 1.5 }}
-                  className="flex items-center justify-center gap-4 mb-8"
-                >
-                  <div className="w-8 h-[1px] bg-gold-accent/50" />
-                  <div className="w-2 h-2 border border-gold-accent/50 rotate-45" />
-                  <div className="w-8 h-[1px] bg-gold-accent/50" />
-                </motion.div>
+      {/* Photo Gallery */}
+      {config?.photos && config.photos.length > 0 && (
+        <>
+          <ChapterDivider number={2} />
+          <Section>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-8">
+              {config.photos.map((photo, i) => (
+                <PhotoCard key={i} {...photo} index={i} />
+              ))}
+            </div>
+          </Section>
+        </>
+      )}
 
-                {/* Message preview */}
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 2 }}
-                  className="font-serif text-lg md:text-xl text-warm-white/50 italic max-w-2xl mx-auto"
-                >
-                  {config.message.split('\n')[0]}
-                </motion.p>
+      {/* Emotional Depth */}
+      <ChapterDivider number={3} />
+      <EmotionalDepthSection />
 
-                {/* Scroll indicator */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 1, delay: 3 }}
-                  className="absolute bottom-12 left-1/2 -translate-x-1/2"
-                >
-                  <motion.div
-                    animate={{ y: [0, 8, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="flex flex-col items-center gap-2"
+      {/* Remaining message lines */}
+      {config?.message && config.message.length > 1 && (
+        <>
+          <ChapterDivider number={4} />
+          <Section>
+            <ParallaxSection speed={0.1}>
+              <div className="glass p-8 md:p-16 max-w-3xl mx-auto space-y-8">
+                {config.message.slice(1).map((paragraph, i) => (
+                  <motion.p
+                    key={i}
+                    className="text-lg md:text-xl leading-[1.8] font-serif-alt italic"
+                    style={{ color: 'rgb(var(--text))' }}
+                    initial={{ opacity: 0, y: 25 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.15, duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
                   >
-                    <span className="text-xs text-gold-accent/40 tracking-[0.2em] uppercase">
-                      Gulir ke bawah
-                    </span>
-                    <div className="w-[1px] h-8 bg-gradient-to-b from-gold-accent/40 to-transparent" />
-                  </motion.div>
-                </motion.div>
+                    {paragraph}
+                  </motion.p>
+                ))}
               </div>
-            </section>
+            </ParallaxSection>
+          </Section>
+        </>
+      )}
 
-            {/* Chapter Sections */}
-            {config.chapters.map((chapter, i) => (
-              <ChapterSection
-                key={i}
-                chapter={chapter}
-                index={i}
-                total={config.chapters.length}
-                photo={i < config.photos.length ? config.photos[i] : undefined}
-                caption={i < config.captions.length ? config.captions[i] : undefined}
-              />
-            ))}
-
-            {/* Photo Gallery Section */}
-            <PhotoSection photos={config.photos} captions={config.captions} />
-
-            {/* Long Letter Section */}
-            <LongLetterSection message={config.message} sender={config.sender} />
-
-            {/* Closing Section */}
-            <ClosingSection closing={config.closing} recipient={config.recipient} />
-
-            {/* Navigation */}
-            <ChapterNav total={totalSections} activeChapter={activeChapter} />
-
-            {/* Music Button */}
-            <MusicButton music={config.music} musicTitle={config.musicTitle} />
-
-            {/* WhatsApp CTA */}
-            <a
-              href="https://wa.me/6282320114535?text=Halo%2C%20saya%20tertarik%20dengan%20EverLetter%20Cinematic%20Letter!"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="fixed top-6 right-6 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-600 transition-colors flex items-center gap-2 font-medium"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-              </svg>
-              Pesan Sekarang
-            </a>
-
-            {/* Share Button */}
-            <button
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: 'EverLetter - Cinematic Letter',
-                    text: 'Lihat hadiah digital indah ini!',
-                    url: window.location.href,
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                  setToast('Link disalin ke clipboard!');
-                  setTimeout(() => setToast(null), 3000);
-                }
-              }}
-              className="fixed bottom-20 right-6 z-50 bg-elegant-white/20 backdrop-blur-sm text-white px-4 py-3 rounded-full shadow-lg hover:bg-elegant-white/30 transition-colors flex items-center gap-2"
-              aria-label="Bagikan"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-            </button>
-
-            {/* Toast Notification */}
-            <AnimatePresence>
-              {toast && (
-                <motion.div
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 50 }}
-                  className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] bg-gold-accent/90 text-deep-black px-6 py-3 rounded-full shadow-lg font-medium text-sm"
-                >
-                  {toast}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      <ClosingSection senderName={config?.senderName} />
+    </BaseLayout>
   );
 }
