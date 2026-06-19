@@ -659,9 +659,12 @@ export default function Home() {
           <ChapterDivider number={2} />
           <Section>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-5 md:gap-8">
-              {config.photos.map((photo, i) => (
-                <PhotoCard key={i} {...photo} index={i} />
-              ))}
+              {(config.photos as any[]).map((photo, i) => {
+                const src = typeof photo === 'string' ? photo : photo.src;
+                const alt = typeof photo === 'string' ? (config.captions?.[i] || `Photo ${i + 1}`) : photo.alt;
+                const caption = typeof photo === 'string' ? config.captions?.[i] : photo.caption;
+                return <PhotoCard key={i} src={src} alt={alt} caption={caption} index={i} />;
+              })}
             </div>
           </Section>
         </>
@@ -697,7 +700,7 @@ export default function Home() {
         </>
       )}
 
-      <ClosingSection senderName={config?.senderName} />
+      <ClosingSection senderName={config?.senderName || config?.sender} />
     </BaseLayout>
   );
 }
