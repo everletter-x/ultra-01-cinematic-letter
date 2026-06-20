@@ -6,15 +6,17 @@ interface MusicPlayerProps {
   title?: string;
   audioSrc?: string;
   autoPlay?: boolean;
+  photos?: string[] | { src: string; alt: string; caption?: string }[];
 }
 
-export function MusicPlayer({ src, title, audioSrc, autoPlay }: MusicPlayerProps) {
+export function MusicPlayer({ src, title, audioSrc, autoPlay, photos }: MusicPlayerProps) {
   const audioSource = src || audioSrc || "";
   const [playing, setPlaying] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+  const [photoIndex, setPhotoIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +52,15 @@ export function MusicPlayer({ src, title, audioSrc, autoPlay }: MusicPlayerProps
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [expanded]);
+
+  // Photo slideshow cycling
+  useEffect(() => {
+    if (!playing || !photos?.length) return;
+    const interval = setInterval(() => {
+      setPhotoIndex((prev) => (prev + 1) % (photos?.length || 1));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [playing, photos]);
 
   // Update progress
   useEffect(() => {
@@ -101,17 +112,34 @@ export function MusicPlayer({ src, title, audioSrc, autoPlay }: MusicPlayerProps
               boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 255, 255, 0.03)",
             }}
           >
-            {/* Album Art / Visualizer */}
+            {/* Album Art / Photo Slideshow */}
             <div className="relative h-48 w-full overflow-hidden">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: playing
-                    ? "linear-gradient(135deg, rgba(246, 179, 208, 0.3), rgba(197, 179, 230, 0.2), rgba(230, 194, 158, 0.2))"
-                    : "linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))",
-                  transition: "background 1s ease",
-                }}
-              />
+              {photos?.length ? (
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={photoIndex}
+                    src={`/${photos[photoIndex]}`}
+                    alt="Photo"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    initial={{ opacity: 0, scale: 1.1 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
+                  />
+                </AnimatePresence>
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: playing
+                      ? "linear-gradient(135deg, rgba(246, 179, 208, 0.3), rgba(197, 179, 230, 0.2), rgba(230, 194, 158, 0.2))"
+                      : "linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02))",
+                    transition: "background 1s ease",
+                  }}
+                />
+              )}
+              {/* Gradient overlay for bars readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
               {/* Animated bars */}
               <div className="absolute inset-0 flex items-end justify-center gap-1 px-8 pb-6">
                 {[...Array(24)].map((_, i) => (
@@ -149,14 +177,22 @@ export function MusicPlayer({ src, title, audioSrc, autoPlay }: MusicPlayerProps
               </div>
               {/* Playing indicator */}
               {playing && (
-                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
                   <motion.div
                     className="w-1.5 h-1.5 rounded-full bg-[#1DB954]"
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 1.5, repeat: Infinity }}
                   />
-                  <span className="text-[9px] tracking-widest uppercase text-white/40">
+                  <span className="text-[9px] tracking-widest uppercase text-white/60">
                     Now Playing
+                  </span>
+                </div>
+              )}
+              {/* Photo counter */}
+              {photos && photos.length > 1 && (
+                <div className="absolute bottom-3 right-3 z-10">
+                  <span className="text-[9px] tracking-wider text-white/50 bg-black/40 backdrop-blur-md px-2 py-1 rounded-full">
+                    {photoIndex + 1}/{photos.length}
                   </span>
                 </div>
               )}

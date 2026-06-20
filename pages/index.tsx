@@ -307,6 +307,43 @@ function HeroSection({ recipientName }: { recipientName?: string }) {
   );
 }
 
+/* ── Focus Rack Text (blur → focus) ── */
+function FocusRackText({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, filter: "blur(12px)" }}
+      whileInView={{ opacity: 1, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-10%" }}
+      transition={{ duration: 1.2, delay, ease: [0.25, 0.1, 0.25, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ── Letterbox Transition Bars ── */
+function LetterboxBars({ direction = "close" }: { direction: "open" | "close" }) {
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[90]">
+      <motion.div
+        className="absolute top-0 left-0 right-0 h-[10vh]"
+        style={{ backgroundColor: "rgb(var(--bg-start))" }}
+        initial={direction === "open" ? { y: 0 } : { y: "-100%" }}
+        animate={direction === "open" ? { y: "-100%" } : { y: 0 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      />
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-[10vh]"
+        style={{ backgroundColor: "rgb(var(--bg-start))" }}
+        initial={direction === "open" ? { y: 0 } : { y: "100%" }}
+        animate={direction === "open" ? { y: "100%" } : { y: 0 }}
+        transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      />
+    </div>
+  );
+}
+
 /* ── 3D Parallax Section Wrapper ── */
 function ParallaxSection({ children, speed = 0.5, className = "" }: { children: React.ReactNode; speed?: number; className?: string }) {
   const { scrollYProgress } = useScroll();
@@ -353,13 +390,7 @@ function EmotionalDepthSection() {
           </motion.div>
 
           {paragraphs.map((text, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: 40, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true, margin: "-5%" }}
-              transition={{ duration: 0.8, delay: i * 0.08, ease: [0.25, 0.1, 0.25, 1] }}
-            >
+            <FocusRackText key={i} delay={i * 0.1}>
               <p className="text-lg md:text-xl leading-[2] font-serif-alt italic text-white/80">
                 {i === 0 && (
                   <span className="text-5xl md:text-6xl font-serif float-left mr-3 mt-1 leading-none"
@@ -374,7 +405,7 @@ function EmotionalDepthSection() {
                   <div className="w-1.5 h-1.5 rotate-45 border border-white/10" />
                 </div>
               )}
-            </motion.div>
+            </FocusRackText>
           ))}
         </div>
       </ParallaxSection>
@@ -416,22 +447,16 @@ function OpeningChapter({ message, recipientName }: { message?: string[]; recipi
 
           <div className="space-y-5">
             {lines.map((line, i) => (
-              <motion.p
-                key={i}
-                className="text-lg md:text-xl leading-[1.8] font-serif-alt italic"
-                style={{ color: 'rgb(var(--text))' }}
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 + i * 0.2, duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-              >
-                {i === 0 && (
-                  <span className="text-5xl md:text-6xl font-serif float-left mr-3 mt-1 leading-none" style={{ color: 'rgb(var(--primary))' }}>
-                    {line.charAt(0)}
-                  </span>
-                )}
-                {i === 0 ? line.slice(1) : line}
-              </motion.p>
+              <FocusRackText key={i} delay={0.3 + i * 0.25}>
+                <p className="text-lg md:text-xl leading-[1.8] font-serif-alt italic" style={{ color: 'rgb(var(--text))' }}>
+                  {i === 0 && (
+                    <span className="text-5xl md:text-6xl font-serif float-left mr-3 mt-1 leading-none" style={{ color: 'rgb(var(--primary))' }}>
+                      {line.charAt(0)}
+                    </span>
+                  )}
+                  {i === 0 ? line.slice(1) : line}
+                </p>
+              </FocusRackText>
             ))}
           </div>
 
@@ -642,6 +667,7 @@ export default function Home() {
       <MusicPlayer
         audioSrc={config?.audioSrc}
         autoPlay={config?.autoplayAudio}
+        photos={config?.photos}
       />
 
       <HeroSection recipientName={config?.recipientName || config?.recipient} />
